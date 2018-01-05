@@ -1,0 +1,87 @@
+/*****************************************************************************
+ *   uarttest.c:  main C entry file for NXP LPC17xx Family Microprocessors
+ *
+ *   Copyright(C) 2009, NXP Semiconductor
+ *   All rights reserved.
+ *
+ *   History
+ *   2009.05.27  ver 1.00    Prelimnary version, first Release
+ *
+******************************************************************************/
+#include "lpc17xx.h"
+#include "type.h"
+#include "uart.h"
+
+extern volatile uint32_t UART3Count;
+extern volatile uint8_t UART3Buffer[BUFSIZE];
+extern volatile uint32_t UART2Count;
+extern volatile uint8_t UART2Buffer[BUFSIZE];
+extern volatile uint32_t UART1Count;
+extern volatile uint8_t UART1Buffer[BUFSIZE];
+extern volatile uint32_t UART0Count;
+extern volatile uint8_t UART0Buffer[BUFSIZE];
+void delay(int count);
+/*****************************************************************************
+**   Main Function  main()
+This program has been test on Keil LPC1700 board.
+*****************************************************************************/
+int main (void)
+{
+  SystemInit();
+  UART0Count = 0;
+  UART1Count = 0; 
+  UARTInit(0,9600);	/* baud rate setting */
+ 
+  UARTInit(1,115200);	/* baud rate setting */
+  
+
+  delay(10000);
+ 																  
+  UARTSend( 0, (uint8_t *)UART1Buffer, UART0Count );
+
+  	
+		UARTSend( 1, "AT\r\n", sizeof("\r\nAT\r\n"));	
+  		delay(100000);
+		 UARTSend( 0, (uint8_t *)UART1Buffer, UART0Count );
+ 		UARTSend( 1, "AT+CIPMUX=1\r\n", sizeof("AT+CIPMUX=1\r\n"));	
+		delay(100000);
+		 UARTSend( 0, (uint8_t *)UART1Buffer, UART0Count );
+		UARTSend(1, "AT+CIPSERVER=1,139\r\n", sizeof("AT+CIPSERVER=1,139\r\n"));	
+ 		delay(100000);	
+		 UARTSend( 0, (uint8_t *)UART1Buffer, UART0Count );
+ 
+															  																  
+  
+  while (1) 
+  {				/* Loop forever */
+	if ( UART1Count != 0 )
+	{
+		LPC_UART1->IER = IER_THRE | IER_RLS;			/* Disable RBR */
+    	UARTSend( 1, "AT+CIPSEND=0,7\r\n", sizeof("AT+CIPSEND=0,7\r\n"));		
+   		delay(100000);
+  		UARTSend( 1, "started\r\n", sizeof("started\r\n"));		 
+	  	UARTSend( 0, (uint8_t *)UART1Buffer, UART0Count );
+	  	UART1Count = 0;
+	 	 LPC_UART1->IER = IER_THRE | IER_RLS | IER_RBR;	/* Re-enable RBR */
+	}
+	else
+	{
+		UARTSend( 0, "no", 3 );
+	}
+  }
+}
+void delay(int count)
+{
+  int j=0,i=0;
+
+  for(j=0;j<count;j++)
+  {
+    /* At 60Mhz, the below loop introduces
+    delay of 10 us */
+    for(i=0;i<35;i++);
+  }
+}
+
+/*****************************************************************************
+**                            End Of File
+*****************************************************************************/
